@@ -65,6 +65,11 @@ final class EmotionEngine {
     private var frameCounter = 0
     private var neutralHoldStart: Date?
     private var fpsTimestamps: [CFAbsoluteTime] = []
+    /// EMA-smoothed raw evidence scores (geometric expert) — the intensity signal.
+    private var smoothedIntensities: [Emotion: Double] = [:]
+    /// EMA-smoothed overall expression energy (intensity stand-in for neutral).
+    private var smoothedEnergy: Double = 0
+    private let intensityAlpha = 0.35
 
     init() {
         let saved = NeutralBaseline.loadSaved()
@@ -113,6 +118,8 @@ final class EmotionEngine {
             overlay = nil
             auVector = [:]
             smoother.decayTowardRest()
+            for (k, v) in smoothedIntensities { smoothedIntensities[k] = v * 0.85 }
+            smoothedEnergy *= 0.85
             let dist = smoother.smoothed
             let va = dist.valenceArousal
             reading = EmotionReading(
@@ -120,6 +127,8 @@ final class EmotionEngine {
                 distribution: dist,
                 dominant: smoother.stableDominant,
                 confidence: dist[smoother.stableDominant],
+                intensity: 0,
+                intensities: smoothedIntensities,
                 valence: va.valence,
                 arousal: va.arousal,
                 faceDetected: false,
@@ -165,6 +174,17 @@ final class EmotionEngine {
         let au = AUComputer.compute(metrics: extraction.metrics, baseline: baseline.metrics)
         var frameDistribution = EmotionClassifier.classify(au)
 
+        // Intensity signal: raw pre-softmax evidence scores. Deliberately
+        // geometric-only — intensity measures how far the face is from rest,
+        // which the appearance expert cannot grade.
+        let rawScores = EmotionClassifier.scores(for: au)
+        for e in Emotion.allCases {
+            let prev = smoothedIntensities[e] ?? 0
+            smoothedIntensities[e] = prev * (1 - intensityAlpha) + (rawScores[e] ?? 0) * intensityAlpha
+        }
+        smoothedEnergy = smoothedEnergy * (1 - intensityAlpha)
+            + EmotionClassifier.expressionEnergy(for: au) * intensityAlpha
+
         // Appearance expert (optional): score every Nth frame asynchronously,
         // fuse the most recent result log-linearly.
         frameCounter += 1
@@ -199,11 +219,18 @@ final class EmotionEngine {
         }
 
         let va = smoothedDist.valenceArousal
+        // For expressive emotions intensity = their evidence strength; for
+        // neutral it degrades to overall expression energy (≈0 at rest).
+        let intensity = stableDominant == .neutral
+            ? smoothedEnergy
+            : (smoothedIntensities[stableDominant] ?? 0)
         reading = EmotionReading(
             date: now,
             distribution: smoothedDist,
             dominant: stableDominant,
             confidence: smoothedDist[stableDominant],
+            intensity: min(1, intensity),
+            intensities: smoothedIntensities,
             valence: va.valence,
             arousal: va.arousal,
             faceDetected: true,

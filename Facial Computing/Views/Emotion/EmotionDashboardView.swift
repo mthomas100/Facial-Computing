@@ -133,7 +133,10 @@ struct EmotionDashboardView: View {
     private var rightColumn: some View {
         VStack(spacing: 12) {
             EmotionHeroView(reading: engine.reading)
-            EmotionBarsView(distribution: engine.reading.distribution)
+            EmotionBarsView(
+                distribution: engine.reading.distribution,
+                intensities: engine.reading.intensities
+            )
             HStack(alignment: .top, spacing: 12) {
                 ValenceArousalPadView(
                     valence: engine.reading.valence,

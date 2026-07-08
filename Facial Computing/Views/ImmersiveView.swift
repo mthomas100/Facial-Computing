@@ -44,7 +44,10 @@ struct ImmersiveView: View {
             #if os(visionOS)
             if let aura = content.entities.first(where: { $0.name == "EmotionAura" }) as? ModelEntity {
                 let reading = appModel.emotionEngine.reading
-                let opacity: Float = reading.faceDetected ? Float(0.05 + 0.11 * reading.confidence) : 0
+                // Aura strength follows expression INTENSITY (gated by
+                // confidence) — the sky burns brighter the harder you emote.
+                let strength = reading.intensity * min(1, reading.confidence * 1.6)
+                let opacity: Float = reading.faceDetected ? Float(0.04 + 0.16 * strength) : 0
                 aura.model?.materials = [
                     ImmersiveView.auraMaterial(color: UIColor(reading.dominant.color), opacity: opacity)
                 ]

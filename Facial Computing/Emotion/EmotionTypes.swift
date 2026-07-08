@@ -180,6 +180,19 @@ nonisolated struct EmotionDistribution: Sendable, Equatable {
     }
 }
 
+/// Grades a 0…1 intensity into a human adjective ("Slightly", "Very", …).
+nonisolated enum EmotionIntensity {
+    static func adjective(_ value: Double) -> String {
+        switch value {
+        case ..<0.18: return "Barely"
+        case ..<0.38: return "Slightly"
+        case ..<0.62: return "Moderately"
+        case ..<0.82: return "Very"
+        default: return "Extremely"
+        }
+    }
+}
+
 /// One timestamped output of the emotion engine.
 nonisolated struct EmotionReading: Sendable {
     var date: Date
@@ -188,6 +201,12 @@ nonisolated struct EmotionReading: Sendable {
     var dominant: Emotion
     /// Smoothed probability of `dominant`.
     var confidence: Double
+    /// 0…1 strength of the dominant emotion's facial evidence — how HARD the
+    /// expression is being made, independent of how SURE the classifier is.
+    /// (For neutral this is overall expression energy, ≈0 at rest.)
+    var intensity: Double
+    /// Smoothed raw evidence score per emotion (geometric expert, pre-softmax).
+    var intensities: [Emotion: Double]
     var valence: Double
     var arousal: Double
     var faceDetected: Bool
@@ -199,6 +218,8 @@ nonisolated struct EmotionReading: Sendable {
         distribution: .neutralRest,
         dominant: .neutral,
         confidence: 0,
+        intensity: 0,
+        intensities: [:],
         valence: 0,
         arousal: 0,
         faceDetected: false,

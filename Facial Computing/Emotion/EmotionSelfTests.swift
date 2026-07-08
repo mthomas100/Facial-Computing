@@ -16,6 +16,7 @@ enum EmotionSelfTests {
     static func runAll() {
         classifierPrototypes()
         temporalHysteresis()
+        intensityGrading()
         distributionMath()
         print("✅ EmotionSelfTests: all checks passed")
     }
@@ -54,6 +55,20 @@ enum EmotionSelfTests {
             final = smoother.update(with: happy).dominant
         }
         assert(final == .happiness, "EmotionSelfTests: sustained happiness not adopted, got \(final)")
+    }
+
+    private static func intensityGrading() {
+        // Raw evidence scores must grow with expression strength.
+        let mild = EmotionClassifier.scores(for: [.au12: 0.3])[.happiness] ?? 0
+        let strong = EmotionClassifier.scores(for: [.au12: 0.9, .au6: 0.6])[.happiness] ?? 0
+        assert(strong > mild, "EmotionSelfTests: intensity not monotone (\(mild) vs \(strong))")
+
+        assert(EmotionClassifier.expressionEnergy(for: [:]) == 0, "EmotionSelfTests: rest energy not zero")
+        assert(EmotionClassifier.expressionEnergy(for: [.au12: 0.9, .au26: 0.8]) > 0.5,
+               "EmotionSelfTests: strong expression energy too low")
+
+        assert(EmotionIntensity.adjective(0.1) == "Barely", "EmotionSelfTests: adjective scale broken")
+        assert(EmotionIntensity.adjective(0.95) == "Extremely", "EmotionSelfTests: adjective scale broken")
     }
 
     private static func distributionMath() {

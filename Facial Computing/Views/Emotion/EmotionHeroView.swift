@@ -39,18 +39,21 @@ struct EmotionHeroView: View {
             .animation(.smooth(duration: 0.3), value: reading.confidence)
 
             VStack(alignment: .leading, spacing: 5) {
-                Text(reading.faceDetected ? reading.dominant.displayName : "Looking for you…")
+                Text(headline)
                     .font(.system(size: 38, weight: .bold, design: .rounded))
                     .foregroundStyle(reading.faceDetected ? color : Color.secondary)
                     .contentTransition(.opacity)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(0.5)
 
                 if reading.faceDetected {
-                    Text("\(Int((reading.confidence * 100).rounded()))% confident")
+                    Text("\(Int((reading.confidence * 100).rounded()))% sure")
                         .font(.title3)
                         .foregroundStyle(.secondary)
                         .contentTransition(.numericText())
+
+                    intensityGauge
+
                     Text(reading.dominant.facsHint)
                         .font(.caption)
                         .foregroundStyle(.tertiary)
@@ -60,6 +63,7 @@ struct EmotionHeroView: View {
                         .foregroundStyle(.tertiary)
                 }
             }
+            .animation(.smooth(duration: 0.25), value: reading.intensity)
             Spacer(minLength: 0)
         }
         .padding(18)
@@ -69,6 +73,38 @@ struct EmotionHeroView: View {
                 .stroke(color.opacity(reading.faceDetected ? 0.35 : 0.08), lineWidth: 1.5)
         )
         .animation(.smooth(duration: 0.35), value: reading.dominant)
+    }
+
+    /// "Very Angry", "Slightly Happy" … (neutral stays ungraded).
+    private var headline: String {
+        guard reading.faceDetected else { return "Looking for you…" }
+        guard reading.dominant != .neutral else { return reading.dominant.displayName }
+        return "\(EmotionIntensity.adjective(reading.intensity)) \(reading.dominant.displayName)"
+    }
+
+    /// How hard the expression is being made (vs. the ring's "how sure").
+    private var intensityGauge: some View {
+        HStack(spacing: 8) {
+            Text(reading.dominant == .neutral ? "Expression" : "Intensity")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 64, alignment: .leading)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.10))
+                    Capsule()
+                        .fill(color.gradient)
+                        .frame(width: max(3, geo.size.width * reading.intensity))
+                }
+            }
+            .frame(height: 8)
+            Text("\(Int((reading.intensity * 10).rounded()))/10")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
+                .frame(width: 34, alignment: .trailing)
+        }
+        .frame(maxWidth: 270)
     }
 }
 #endif

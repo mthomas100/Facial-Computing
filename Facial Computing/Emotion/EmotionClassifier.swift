@@ -99,12 +99,18 @@ enum EmotionClassifier {
         }
 
         // Neutral: high when overall AU energy is low.
-        let strongest = energyUnits.map { a($0) }.max() ?? 0
-        let mean = energyUnits.map { a($0) }.reduce(0, +) / Double(energyUnits.count)
-        let energy = 0.6 * strongest + 0.4 * mean
-        scores[.neutral] = max(0, 1 - 1.8 * energy)
+        scores[.neutral] = max(0, 1 - 1.8 * expressionEnergy(for: au))
 
         return scores
+    }
+
+    /// Overall expressiveness of the face in 0…1 — how far from rest the
+    /// strong AUs are, regardless of which emotion they spell.
+    static func expressionEnergy(for au: AUVector) -> Double {
+        let values = energyUnits.map { au[$0] ?? 0 }
+        let strongest = values.max() ?? 0
+        let mean = values.reduce(0, +) / Double(values.count)
+        return min(1, 0.6 * strongest + 0.4 * mean)
     }
 
     /// Full pipeline: AU vector → probability distribution.

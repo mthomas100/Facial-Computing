@@ -5,7 +5,7 @@ https://github.com/user-attachments/assets/de45b118-8e11-429f-bce3-0d1883500a2b
 
 ## Emotion Recognition
 
-The **Emotion** tab (default) runs a multi-expert pipeline over the Persona camera feed and announces one of eight emotions — Neutral, Happy, Sad, Surprised, Afraid, Angry, Disgusted, Contempt — with a live confidence ring, per-class probability bars, a valence/arousal circumplex pad, and a FACS "science" panel.
+The **Emotion** tab (default) runs a multi-expert pipeline over the Persona camera feed and announces one of eight emotions — Neutral, Happy, Sad, Surprised, Afraid, Angry, Disgusted, Contempt — **graded by intensity** ("Slightly Happy" → "Extremely Angry", with a 0–10 gauge distinct from the confidence ring: intensity = how hard the expression is made, confidence = how sure the classifier is). The dashboard shows the confidence ring, per-class probability bars with thin intensity underlines, a valence/arousal circumplex pad, and a FACS "science" panel.
 
 Pipeline (per frame, ~12–15 Hz):
 
@@ -17,7 +17,7 @@ Pipeline (per frame, ~12–15 Hz):
 
 **Why it's accurate:** the engine auto-calibrates a neutral baseline from your first seconds on camera (re-run anytime with *Calibrate Neutral*, persisted across launches), gates evidence by landmark confidence and head pose, and slowly re-tracks the baseline while you're verifiably neutral. All expression evidence is therefore measured relative to your own face, not a population average.
 
-The immersive space also carries an **emotion aura** — an inward-facing sphere tinted by the detected emotion, its intensity following confidence.
+The immersive space also carries an **emotion aura** — an inward-facing sphere tinted by the detected emotion, burning brighter the harder you emote (driven by expression intensity, gated by confidence).
 
 Debug builds run `EmotionSelfTests` at launch, asserting the classifier prototypes, hysteresis behavior, and distribution math.
 
