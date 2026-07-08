@@ -13,13 +13,16 @@ import RealityKit
 /// Floating controls panel shown inside the ImmersiveSpace via a ViewAttachmentComponent.
 struct ImmersiveControlsView: View {
     enum Demo: String, CaseIterable, Identifiable {
+        case emotion = "Emotion"
         case persona = "Persona"
         case vision = "Vision"
         case frame = "Frame"
         var id: String { rawValue }
     }
 
-    @State private var selected: Demo = .persona
+    @Environment(AppModel.self) private var appModel
+
+    @State private var selected: Demo = .emotion
 
     // Controllers
     @State private var persona = PersonaCaptureController()
@@ -54,6 +57,8 @@ struct ImmersiveControlsView: View {
             // Demo content
             Group {
                 switch selected {
+                case .emotion:
+                    emotionDemo
                 case .persona:
                     personaDemo
                 case .vision:
@@ -62,7 +67,11 @@ struct ImmersiveControlsView: View {
                     frameDemo
                 }
             }
-            .frame(minWidth: 560, minHeight: 420, alignment: .topLeading)
+            .frame(
+                minWidth: selected == .emotion ? 1010 : 560,
+                minHeight: selected == .emotion ? 640 : 420,
+                alignment: .topLeading
+            )
             .background(.ultraThinMaterial)
             .cornerRadius(12)
             .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.white.opacity(0.1)))
@@ -82,6 +91,11 @@ struct ImmersiveControlsView: View {
     }
 
     // MARK: - Individual demos
+
+    private var emotionDemo: some View {
+        EmotionDashboardView(engine: appModel.emotionEngine, persona: persona)
+            .padding(10)
+    }
 
     private var personaDemo: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -226,6 +240,9 @@ struct ImmersiveControlsView: View {
     // MARK: - Lifecycle helpers
     private func stopCurrentDemo() async {
         switch selected {
+        case .emotion:
+            persona.onFrame = nil
+            persona.stop()
         case .persona:
             persona.stop()
         case .vision:
@@ -239,6 +256,12 @@ struct ImmersiveControlsView: View {
 
     private func startSelectedDemo() async {
         switch selected {
+        case .emotion:
+            try? await persona.start()
+            let engine = appModel.emotionEngine
+            persona.onFrame = { pixelBuffer, _ in
+                engine.ingest(pixelBuffer)
+            }
         case .persona:
             try? await persona.start()
         case .vision:

@@ -18,4 +18,9 @@ class AppModel {
         case open
     }
     var immersiveSpaceState = ImmersiveSpaceState.closed
+
+    #if os(visionOS)
+    /// Shared emotion-recognition engine (camera frames in, emotion readings out).
+    let emotionEngine = EmotionEngine()
+    #endif
 }

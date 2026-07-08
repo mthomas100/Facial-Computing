@@ -8,6 +8,9 @@
 import SwiftUI
 import RealityKit
 import RealityKitContent
+#if os(visionOS)
+import UIKit
+#endif
 
 struct ImmersiveView: View {
     @Environment(AppModel.self) var appModel
@@ -18,13 +21,34 @@ struct ImmersiveView: View {
             if let immersiveContentEntity = try? await Entity(named: "SkyDome", in: realityKitContentBundle) {
                 content.add(immersiveContentEntity)
             }
-            // Attach controls panel as a SwiftUI attachment in space.
             #if os(visionOS)
+            // Emotion aura: an inward-facing sphere around the user, tinted by
+            // the currently detected emotion.
+            let aura = ModelEntity(
+                mesh: .generateSphere(radius: 7),
+                materials: [ImmersiveView.auraMaterial(color: .white, opacity: 0)]
+            )
+            aura.name = "EmotionAura"
+            aura.scale = SIMD3<Float>(-1, 1, 1) // flip winding so the interior renders
+            aura.position = [0, 1.5, 0]
+            content.add(aura)
+
+            // Attach controls panel as a SwiftUI attachment in space.
             let attachmentEntity = Entity()
-            let attachment = ViewAttachmentComponent(rootView: ImmersiveControlsView())
+            let attachment = ViewAttachmentComponent(rootView: ImmersiveControlsView().environment(appModel))
             attachmentEntity.components.set(attachment)
             attachmentEntity.position = [0, 1.5, -1]
             content.add(attachmentEntity)
+            #endif
+        } update: { content in
+            #if os(visionOS)
+            if let aura = content.entities.first(where: { $0.name == "EmotionAura" }) as? ModelEntity {
+                let reading = appModel.emotionEngine.reading
+                let opacity: Float = reading.faceDetected ? Float(0.05 + 0.11 * reading.confidence) : 0
+                aura.model?.materials = [
+                    ImmersiveView.auraMaterial(color: UIColor(reading.dominant.color), opacity: opacity)
+                ]
+            }
             #endif
         }
         .onAppear {
@@ -32,6 +56,14 @@ struct ImmersiveView: View {
         .onDisappear {
         }
     }
+
+    #if os(visionOS)
+    static func auraMaterial(color: UIColor, opacity: Float) -> UnlitMaterial {
+        var material = UnlitMaterial(color: color)
+        material.blending = .transparent(opacity: .init(floatLiteral: opacity))
+        return material
+    }
+    #endif
 }
 
 //#Preview(immersionStyle: .full) {

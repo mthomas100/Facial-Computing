@@ -11,7 +11,13 @@ import SwiftUI
 struct Facial_ComputingApp: App {
     
     @State private var appModel = AppModel()
-    
+
+    init() {
+        #if os(visionOS) && DEBUG
+        EmotionSelfTests.runAll()
+        #endif
+    }
+
     var body: some Scene {
 //        WindowGroup {
 //            ContentView()

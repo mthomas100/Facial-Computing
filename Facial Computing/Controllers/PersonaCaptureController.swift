@@ -33,8 +33,8 @@ final class PersonaCaptureController: NSObject {
     var isRunning: Bool = false
     var latestPixelBuffer: CVPixelBuffer?
 
-    // Optional per-frame callback
-    var onFrame: ((CVPixelBuffer, CMTime) -> Void)?
+    // Optional per-frame callback (invoked on the main actor)
+    var onFrame: (@MainActor (CVPixelBuffer, CMTime) -> Void)?
 
     // AsyncStream support
     private var frameContinuation: AsyncStream<CVPixelBuffer>.Continuation?
