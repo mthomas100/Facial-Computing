@@ -1,7 +1,25 @@
 # Facial Computing
-Facial Gesture Analysis combining your persona and the computer [Vision Framework](https://developer.apple.com/documentation/vision).
+Facial Gesture Analysis combining your persona and the computer [Vision Framework](https://developer.apple.com/documentation/vision) — including a real-time **emotion recognition engine** that names the emotion on your face.
 
 https://github.com/user-attachments/assets/de45b118-8e11-429f-bce3-0d1883500a2b
+
+## Emotion Recognition
+
+The **Emotion** tab (default) runs a multi-expert pipeline over the Persona camera feed and announces one of eight emotions — Neutral, Happy, Sad, Surprised, Afraid, Angry, Disgusted, Contempt — with a live confidence ring, per-class probability bars, a valence/arousal circumplex pad, and a FACS "science" panel.
+
+Pipeline (per frame, ~12–15 Hz):
+
+1. **Vision landmarks** → roll-corrected, interocular-distance-normalized facial metrics (`FaceGeometry`), so measurements are invariant to head tilt, distance, and framing.
+2. **FACS Action Units** — 14 AU intensities (AU1/2/4/5/6/7/9/12/15/20/23/25/26 + unilateral smirk) computed as deltas from *your* calibrated neutral baseline (`ActionUnits`).
+3. **EMFACS classifier** — Ekman-style AU prototypes with inhibitor penalties and evidence gates, softmaxed into a probability distribution (`EmotionClassifier`).
+4. **Optional neural expert** — if a Core ML facial-expression model is bundled (base name `EmotionAppearance`, `FERPlus`, `EmotionClassifier`, or `CNNEmotions`), it scores an expanded face crop and is fused log-linearly with the geometric expert (`MLEmotionScorer`). The app is fully functional without it.
+5. **Temporal layer** — EMA smoothing plus label hysteresis so the readout is stable, and probability-weighted valence/arousal on the circumplex (`TemporalSmoother`).
+
+**Why it's accurate:** the engine auto-calibrates a neutral baseline from your first seconds on camera (re-run anytime with *Calibrate Neutral*, persisted across launches), gates evidence by landmark confidence and head pose, and slowly re-tracks the baseline while you're verifiably neutral. All expression evidence is therefore measured relative to your own face, not a population average.
+
+The immersive space also carries an **emotion aura** — an inward-facing sphere tinted by the detected emotion, its intensity following confidence.
+
+Debug builds run `EmotionSelfTests` at launch, asserting the classifier prototypes, hysteresis behavior, and distribution math.
 
 Concise overview of the repository, with each project file and its responsibility.
 
@@ -33,12 +51,31 @@ Concise overview of the repository, with each project file and its responsibilit
 - `Facial Computing/Controllers/PersonaCaptureController.swift`: Manages AVFoundation capture from the front camera; exposes latest `CVPixelBuffer`, start/stop, per-frame callbacks, and an `AsyncStream` of frames.
 - `Facial Computing/Controllers/VisionExpressionController.swift`: Uses Vision face landmarks to infer facial expressions (e.g., blinks, smiles); provides a simple detection model with confidence scores.
 
+#### Emotion Engine
+
+- `Facial Computing/Emotion/EmotionTypes.swift`: `Emotion` classes with display metadata and circumplex anchors; `EmotionDistribution`, `EmotionReading`, history samples.
+- `Facial Computing/Emotion/FaceGeometry.swift`: Landmarks → roll-corrected, IOD-normalized `FacialMetrics` + overlay geometry.
+- `Facial Computing/Emotion/ActionUnits.swift`: FACS AU intensity estimation vs. the calibrated `NeutralBaseline` (persisted).
+- `Facial Computing/Emotion/EmotionClassifier.swift`: EMFACS AU-prototype scoring → softmax distribution.
+- `Facial Computing/Emotion/TemporalSmoother.swift`: EMA + hysteresis label stabilization.
+- `Facial Computing/Emotion/FaceAnalyzer.swift`: Actor running Vision landmark requests off the main actor.
+- `Facial Computing/Emotion/MLEmotionScorer.swift`: Optional bundled Core ML appearance expert, fused when present.
+- `Facial Computing/Emotion/EmotionEngine.swift`: Orchestrator — throttling, calibration, fusion, quality gating, published readings.
+- `Facial Computing/Emotion/EmotionSelfTests.swift`: Debug-launch assertions for the pure emotion math.
+
 #### Views
 
 - `Facial Computing/Views/ContentView.swift`: Primary window UI; currently hosts the immersive space toggle button.
-- `Facial Computing/Views/ImmersiveView.swift`: RealityKit `RealityView` for the immersive experience; loads `SkyDome` from `RealityKitContent` and attaches a floating controls panel.
-- `Facial Computing/Views/ImmersiveControlsView.swift`: Floating SwiftUI controls surface shown inside space via `ViewAttachmentComponent`; starts/stops camera capture and runs live/frame-by-frame expression analysis.
+- `Facial Computing/Views/ImmersiveView.swift`: RealityKit `RealityView` for the immersive experience; loads `SkyDome`, hosts the emotion aura sphere, and attaches a floating controls panel.
+- `Facial Computing/Views/ImmersiveControlsView.swift`: Floating SwiftUI controls surface shown inside space via `ViewAttachmentComponent`; hosts the Emotion dashboard plus the Persona/Vision/Frame demos.
 - `Facial Computing/Views/PixelBufferView.swift`: Efficiently converts and previews `CVPixelBuffer` frames as images with throttling.
+- `Facial Computing/Views/Emotion/EmotionDashboardView.swift`: The emotion tab — preview + overlay + calibration on the left, readouts on the right.
+- `Facial Computing/Views/Emotion/EmotionHeroView.swift`: Big emoji, emotion name, animated confidence ring, FACS hint.
+- `Facial Computing/Views/Emotion/EmotionBarsView.swift`: Animated probability bars for all classes.
+- `Facial Computing/Views/Emotion/ValenceArousalPadView.swift`: Circumplex pad with a fading trail of recent readings.
+- `Facial Computing/Views/Emotion/AUMetersView.swift`: Live FACS Action Unit meters ("Science" toggle).
+- `Facial Computing/Views/Emotion/EmotionTimelineView.swift`: 45-second emotion record strip.
+- `Facial Computing/Views/Emotion/FaceLandmarkOverlay.swift`: Face box + landmark constellation over the aspect-fitted preview.
 
 #### Assets
 
