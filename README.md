@@ -12,7 +12,7 @@ Pipeline (per frame, ~12–15 Hz):
 1. **Vision landmarks** → roll-corrected, interocular-distance-normalized facial metrics (`FaceGeometry`), so measurements are invariant to head tilt, distance, and framing.
 2. **FACS Action Units** — 14 AU intensities (AU1/2/4/5/6/7/9/12/15/20/23/25/26 + unilateral smirk) computed as deltas from *your* calibrated neutral baseline (`ActionUnits`).
 3. **EMFACS classifier** — Ekman-style AU prototypes with inhibitor penalties and evidence gates, softmaxed into a probability distribution (`EmotionClassifier`).
-4. **Optional neural expert** — if a Core ML facial-expression model is bundled (base name `EmotionAppearance`, `FERPlus`, `EmotionClassifier`, or `CNNEmotions`), it scores an expanded face crop and is fused log-linearly with the geometric expert (`MLEmotionScorer`). The app is fully functional without it.
+4. **Neural expert** — a bundled **FER+** classifier (`Emotion/FERPlus.mlpackage` — Microsoft FERPlus, MIT license, 17 MB fp16, ~85% on the FER+ test set) scores an expanded face crop via `VNCoreMLRequest` and is fused log-linearly with the geometric expert (`MLEmotionScorer`). Labels are embedded in the model, so class order is irrelevant. Converted from the verified ONNX zoo release with `tools/convert_ferplus.py`; delete the model and the app gracefully runs geometry-only, or swap in any classifier named `EmotionAppearance`, `FERPlus`, `EmotionClassifier`, or `CNNEmotions`.
 5. **Temporal layer** — EMA smoothing plus label hysteresis so the readout is stable, and probability-weighted valence/arousal on the circumplex (`TemporalSmoother`).
 
 **Why it's accurate:** the engine auto-calibrates a neutral baseline from your first seconds on camera (re-run anytime with *Calibrate Neutral*, persisted across launches), gates evidence by landmark confidence and head pose, and slowly re-tracks the baseline while you're verifiably neutral. All expression evidence is therefore measured relative to your own face, not a population average.
@@ -62,6 +62,8 @@ Concise overview of the repository, with each project file and its responsibilit
 - `Facial Computing/Emotion/MLEmotionScorer.swift`: Optional bundled Core ML appearance expert, fused when present.
 - `Facial Computing/Emotion/EmotionEngine.swift`: Orchestrator — throttling, calibration, fusion, quality gating, published readings.
 - `Facial Computing/Emotion/EmotionSelfTests.swift`: Debug-launch assertions for the pure emotion math.
+- `Facial Computing/Emotion/FERPlus.mlpackage`: Bundled FER+ appearance model (Microsoft FERPlus, MIT; 64×64 grayscale in, 8 labeled probabilities out).
+- `tools/convert_ferplus.py`: Reproducible ONNX→Core ML conversion (auto-pad materialization, opset upgrade, softmax + label embedding, fidelity notes).
 
 #### Views
 
