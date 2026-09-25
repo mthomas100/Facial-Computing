@@ -16,7 +16,7 @@ struct ImmersiveView: View {
     @Environment(AppModel.self) var appModel
 
     var body: some View {
-        RealityView { content in
+        RealityView { content, attachments in
             // Add the initial RealityKit content
             if let immersiveContentEntity = try? await Entity(named: "SkyDome", in: realityKitContentBundle) {
                 content.add(immersiveContentEntity)
@@ -34,13 +34,12 @@ struct ImmersiveView: View {
             content.add(aura)
 
             // Attach controls panel as a SwiftUI attachment in space.
-            let attachmentEntity = Entity()
-            let attachment = ViewAttachmentComponent(rootView: ImmersiveControlsView().environment(appModel))
-            attachmentEntity.components.set(attachment)
-            attachmentEntity.position = [0, 1.5, -1]
-            content.add(attachmentEntity)
+            if let panel = attachments.entity(for: "controls") {
+                panel.position = [0, 1.5, -1]
+                content.add(panel)
+            }
             #endif
-        } update: { content in
+        } update: { content, _ in
             #if os(visionOS)
             if let aura = content.entities.first(where: { $0.name == "EmotionAura" }) as? ModelEntity {
                 let reading = appModel.emotionEngine.reading
@@ -51,6 +50,12 @@ struct ImmersiveView: View {
                 aura.model?.materials = [
                     ImmersiveView.auraMaterial(color: UIColor(reading.dominant.color), opacity: opacity)
                 ]
+            }
+            #endif
+        } attachments: {
+            #if os(visionOS)
+            Attachment(id: "controls") {
+                ImmersiveControlsView().environment(appModel)
             }
             #endif
         }

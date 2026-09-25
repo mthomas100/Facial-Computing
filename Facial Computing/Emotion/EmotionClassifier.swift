@@ -73,8 +73,10 @@ enum EmotionClassifier {
     ]
 
     /// AUs that represent strong deliberate expression (drive the neutral score down).
+    /// Includes the unilateral smirk: without it a pure contempt expression can
+    /// never outscore neutral (contempt's evidence tops out at 0.8 vs neutral's 1.0).
     private static let energyUnits: [ActionUnit] = [
-        .au12, .au15, .au4, .au5, .au9, .au20, .au23, .au26, .au1, .au2,
+        .au12, .au15, .au4, .au5, .au9, .au20, .au23, .au26, .au1, .au2, .auUnilateral,
     ]
 
     /// Softmax inverse temperature: higher = sharper distribution.

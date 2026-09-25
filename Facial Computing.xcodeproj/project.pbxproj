@@ -161,10 +161,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2DJDH872JZ;
+				DEVELOPMENT_TEAM = Z2AWL649E6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture video when the immersive space opens.";
+				INFOPLIST_KEY_NSMainCameraUsageDescription = "Main camera access is required to enable spatial sensing and hand tracking in the immersive space.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -190,10 +192,12 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 2DJDH872JZ;
+				DEVELOPMENT_TEAM = Z2AWL649E6;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "$(TARGET_NAME)/Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Camera access is needed to capture video when the immersive space opens.";
+				INFOPLIST_KEY_NSMainCameraUsageDescription = "Main camera access is required to enable spatial sensing and hand tracking in the immersive space.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
